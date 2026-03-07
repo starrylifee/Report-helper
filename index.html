@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="description" content="PDF·DOCX 회의록을 열고, 수정하고, 서명해서 바로 저장하세요.">
+  <title>사인해주세요</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f172a'/><text x='50' y='68' font-size='56' text-anchor='middle'>✍</text></svg>">
+  <!-- Open Graph -->
+  <meta property="og:title" content="사인해주세요">
+  <meta property="og:description" content="PDF·DOCX 문서를 열고, 수정하고, 서명해서 바로 저장하세요.">
+  <meta property="og:image" content="./og-image.png">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">✍</div>
+        <span class="brand-name">사인해주세요</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="chip-btn primary" id="openPdfButton" type="button">파일 열기</button>
+        <input id="pdfInput" type="file"
+          accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          hidden>
+        <button class="chip-btn" id="exportButton" type="button" disabled>다운로드</button>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <aside class="sidebar" id="sidebar">
+        <section class="sidebar-section">
+          <h3 class="sidebar-title">도구</h3>
+          <div class="tool-row">
+            <button class="tool-chip active" data-tool="select" type="button">선택</button>
+            <button class="tool-chip" data-tool="text" type="button">텍스트</button>
+            <button class="tool-chip" data-tool="mask" type="button">가림판</button>
+            <label class="tool-chip upload-chip">
+              사진
+              <input id="photoFileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+            </label>
+          </div>
+        </section>
+
+        <section class="sidebar-section">
+          <h3 class="sidebar-title">서명</h3>
+          <button class="action-btn" id="openSignatureButton" type="button">직접 서명</button>
+          <label class="action-btn secondary upload-chip">
+            파일로 서명
+            <input id="signatureFileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          </label>
+        </section>
+      </aside>
+
+      <!-- Hidden preset elements for JS compat -->
+      <div style="display:none;">
+        <button id="saveDocumentPresetButton" disabled></button>
+        <button id="saveAssetPresetButton" disabled></button>
+        <div id="documentPresetList"></div>
+        <div id="signaturePresetList"></div>
+      </div>
+
+      <main class="workspace">
+        <div class="workspace-header">
+          <div class="doc-info">
+            <span id="documentMeta" class="doc-name">문서 없음</span>
+            <span id="viewerBadge" class="doc-badge" style="display:none;"></span>
+          </div>
+          <div class="workspace-header-right">
+            <div class="zoom-controls">
+              <button class="zoom-btn" id="zoomOutBtn" type="button" title="축소">−</button>
+              <span class="zoom-label" id="zoomLabel">100%</span>
+              <button class="zoom-btn" id="zoomInBtn" type="button" title="확대">+</button>
+            </div>
+            <span id="statusText" class="status-text">파일을 열어 시작하세요.</span>
+          </div>
+        </div>
+        <div class="pdf-viewport" id="pdfViewport">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-content">
+              <div class="empty-icon">
+                <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+                  <rect x="8" y="4" width="32" height="40" rx="4" stroke="currentColor" stroke-width="2" />
+                  <path d="M16 16h16M16 22h12M16 28h14" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" />
+                </svg>
+              </div>
+              <h2>문서를 열어주세요</h2>
+              <p>수정하고 서명해서 바로 저장할 수 있어요.</p>
+              <button class="cta-btn" id="openPdfButtonAlt" type="button">파일 열기</button>
+              <div class="file-types">
+                <span class="file-badge">PDF</span>
+                <span class="file-badge">DOCX</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- 인라인 편집 팝오버 -->
+  <div class="edit-popover hidden" id="editPopover">
+    <div class="popover-body">
+      <textarea id="popoverTextarea" rows="3" placeholder="수정할 내용"></textarea>
+      <div class="popover-options">
+        <div class="popover-field">
+          <label>크기</label>
+          <input id="popoverFontSize" type="number" min="9" max="42" value="14">
+        </div>
+        <div class="popover-field">
+          <label>색상</label>
+          <input id="popoverColor" type="color" value="#161311">
+        </div>
+      </div>
+      <div class="popover-actions">
+        <button class="pop-btn" id="popoverRestore" type="button">원문 복원</button>
+        <button class="pop-btn danger" id="popoverDelete" type="button">삭제</button>
+        <button class="pop-btn primary" id="popoverDone" type="button">완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 어노테이션 편집 팝오버 -->
+  <div class="edit-popover hidden" id="annotationPopover">
+    <div class="popover-body" id="annotationPopoverBody"></div>
+  </div>
+
+  <!-- 서명 모달 -->
+  <div class="modal-backdrop hidden" id="signatureModal" aria-hidden="true" inert>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>서명</h2>
+        <button class="icon-btn" id="closeSignatureButton" type="button">✕</button>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="signatureCanvas"></canvas>
+      </div>
+      <p class="modal-hint">서명한 뒤 '사용하기'를 누르고, 문서에서 넣을 위치를 클릭하세요.</p>
+      <div class="modal-footer">
+        <button class="action-btn secondary" id="clearSignatureButton" type="button">지우기</button>
+        <button class="action-btn" id="useSignatureButton" type="button">사용하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selection panel (hidden, for JS compatibility) -->
+  <div id="selectionPanel" class="selection-panel empty" style="display:none;"></div>
+  <p id="toolHint" style="display:none;"></p>
+
+  <footer class="app-footer">
+    <span>© 2026 서울신답초등학교 정용석</span>
+    <span class="footer-privacy">모든 작업은 이 기기에서만 처리되며, 외부 서버에 데이터를 전송하지 않습니다.</span>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+
+</html>
