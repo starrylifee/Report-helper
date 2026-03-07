@@ -578,7 +578,7 @@ textarea {
 .page-overlay {
   position: absolute;
   inset: 0;
-  touch-action: none;
+  touch-action: manipulation;
 }
 
 /* ═══════════════════════════
@@ -610,7 +610,7 @@ textarea {
   border: 1.5px solid transparent;
   border-radius: 2px;
   transition: all var(--t-fast) var(--ease);
-  touch-action: none;
+  touch-action: manipulation;
 }
 
 .source-text-hitbox:hover {
@@ -1233,19 +1233,66 @@ textarea {
     border-right: none;
     border-bottom: 1px solid var(--sidebar-border);
     padding: 8px 12px;
-    gap: 12px;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .sidebar-title {
+    display: none;
   }
 
   .sidebar-section {
     flex-shrink: 0;
     padding: 0;
-    min-width: 150px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
   }
 
   .sidebar-section+.sidebar-section {
     border-top: none;
     border-left: 1px solid var(--sidebar-border);
-    padding-left: 12px;
+    padding-left: 8px;
+  }
+
+  .tool-row {
+    display: flex;
+    gap: 4px;
+  }
+
+  .tool-chip,
+  .upload-chip {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .action-btn {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+    width: auto;
+  }
+
+  .action-btn+.action-btn {
+    margin-top: 0;
+  }
+
+  .workspace-header {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 12px;
+    gap: 4px;
+  }
+
+  .app-footer {
+    position: static;
+    width: 100%;
+    background: var(--sidebar-bg);
+    padding: 16px;
   }
 
   #signatureCanvas {
@@ -1255,6 +1302,10 @@ textarea {
   .docx-container {
     padding: 24px 16px 32px;
     font-size: 14px;
+  }
+
+  .pdf-viewport {
+    padding: 12px;
   }
 }
 

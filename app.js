@@ -2488,7 +2488,7 @@
     const doneBtn = document.createElement("button");
     doneBtn.textContent = "완료";
     doneBtn.className = "pop-btn primary";
-    doneBtn.style.cssText = "flex:1;height:32px;border-radius:8px;font-size:12px;font-weight:500;background:#0071e3;color:#fff;border:none;cursor:pointer;";
+    doneBtn.style.cssText = "flex:1;height:32px;border-radius:8px;font-size:12px;font-weight:500;background:#6366f1;color:#fff;border:none;cursor:pointer;";
     doneBtn.addEventListener("click", () => hideAnnotationPopover());
     actions.append(removeBtn, doneBtn);
     body.appendChild(actions);
