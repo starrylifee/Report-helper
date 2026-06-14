@@ -47,6 +47,7 @@
     statusText: document.getElementById("statusText"),
     toolHint: document.getElementById("toolHint"),
     exportButton: document.getElementById("exportButton"),
+    sendButton: document.getElementById("sendButton"),
     pdfViewport: document.getElementById("pdfViewport"),
     selectionPanel: document.getElementById("selectionPanel"),
     signatureModal: document.getElementById("signatureModal"),
@@ -101,6 +102,14 @@
     }
     els.pdfInput.addEventListener("change", handlePdfFileInput);
     els.exportButton.addEventListener("click", exportPdf);
+    if (els.sendButton) els.sendButton.addEventListener("click", sendForSignatures);
+    const closeLinksButton = document.getElementById("closeLinksButton");
+    if (closeLinksButton) {
+      closeLinksButton.addEventListener("click", () => {
+        const modal = document.getElementById("linksModal");
+        if (modal) modal.classList.add("hidden");
+      });
+    }
     els.openSignatureButton.addEventListener("click", openSignatureModal);
     els.closeSignatureButton.addEventListener("click", closeSignatureModal);
     els.clearSignatureButton.addEventListener("click", clearSignaturePad);
@@ -228,6 +237,7 @@
     const sourceLabel = options.sourceName || fileName;
     els.documentMeta.textContent = `${sourceLabel} · ${pdfDoc.numPages}페이지`;
     els.exportButton.disabled = false;
+    if (els.sendButton) els.sendButton.disabled = false;
     els.viewerBadge.textContent = `PDF`;
     els.viewerBadge.style.display = "";
     if (els.emptyState) els.emptyState.style.display = "none";
@@ -618,7 +628,8 @@
     const labelMap = {
       select: "선택/이동",
       text: "텍스트 추가",
-      mask: "가림판 추가"
+      mask: "가림판 추가",
+      sigfield: "서명 요청 영역"
     };
     if (els.toolHint) els.toolHint.textContent = `${labelMap[tool] || "선택"}`;
 
@@ -627,6 +638,8 @@
         setStatus("페이지를 클릭하면 텍스트가 추가돼요.");
       } else if (tool === "mask") {
         setStatus("가릴 부분을 클릭하세요.");
+      } else if (tool === "sigfield") {
+        setStatus("서명을 받을 위치를 클릭하세요. 클릭 후 담당자 이름을 입력합니다.");
       } else if (tool === "select") {
         setStatus("수정할 부분을 클릭하세요.");
       }
@@ -736,6 +749,17 @@
     if (state.activeTool === "mask") {
       addAnnotation(createMaskAnnotation(pageNumber, x, y));
       setStatus("가림판이 추가됐어요. 드래그해서 크기를 조절하세요.");
+      return;
+    }
+
+    if (state.activeTool === "sigfield") {
+      const name = window.prompt("이 서명란 담당자 이름을 입력하세요", "");
+      if (!name || !name.trim()) {
+        setStatus("담당자 이름이 필요해요.");
+        return;
+      }
+      addAnnotation(createSigFieldAnnotation(pageNumber, x, y, name.trim()));
+      setStatus(`'${name.trim()}' 서명란을 추가했어요. 계속 클릭해 더 추가할 수 있어요.`);
       return;
     }
 
@@ -1041,6 +1065,21 @@
     };
   }
 
+  function createSigFieldAnnotation(pageNumber, x, y, assignee) {
+    const width = 0.26;
+    const height = 0.08;
+    return {
+      id: createId(),
+      type: "sigfield",
+      pageNumber,
+      x: clamp(x, 0.02, 1 - width - 0.02),
+      y: clamp(y, 0.02, 1 - height - 0.02),
+      width,
+      height,
+      assignee
+    };
+  }
+
   function createImageAnnotation(pageNumber, x, y, pending) {
     const meta = getPageMeta(pageNumber);
     const size = getDefaultImagePlacementSize(meta, pending);
@@ -1127,7 +1166,11 @@
       }
 
       const node = document.createElement("div");
-      node.className = `annotation ${annotation.type === "mask" ? "mask" : annotation.type === "text" ? "text" : "image"}`;
+      const typeClass = annotation.type === "mask" ? "mask"
+        : annotation.type === "text" ? "text"
+          : annotation.type === "sigfield" ? "sigfield"
+            : "image";
+      node.className = `annotation ${typeClass}`;
       node.classList.toggle("selected", annotation.id === state.selectedId);
       node.dataset.annotationId = annotation.id;
 
@@ -1143,6 +1186,8 @@
         node.textContent = annotation.text;
         node.style.fontSize = `${pointsToDisplayPixels(annotation.fontSize, view)}px`;
         node.style.color = annotation.color;
+      } else if (annotation.type === "sigfield") {
+        node.textContent = `✍ ${annotation.assignee || "담당자"}`;
       } else if (isVisualAnnotation(annotation)) {
         const image = document.createElement("img");
         image.src = annotation.src;
@@ -1517,6 +1562,9 @@
     if (annotation.type === "photo") {
       return `사진 · ${annotation.pageNumber}페이지`;
     }
+    if (annotation.type === "sigfield") {
+      return `서명 요청 · ${annotation.assignee || ""} · ${annotation.pageNumber}페이지`;
+    }
     return `서명 이미지 · ${annotation.pageNumber}페이지`;
   }
 
@@ -1834,6 +1882,113 @@
     }
   }
 
+  async function sendForSignatures() {
+    if (!window.SignFlow || !window.SignFlow.available) {
+      setStatus("Firebase 연결이 준비되지 않았어요. 새로고침 후 다시 시도하세요.");
+      return;
+    }
+    if (state.mode !== "pdf" || !state.pdfBytes) {
+      setStatus("PDF를 먼저 열어주세요. (DOCX는 아직 서명 요청을 지원하지 않아요)");
+      return;
+    }
+
+    const sigFields = state.annotations.filter((annotation) => annotation.type === "sigfield");
+    if (sigFields.length === 0) {
+      setStatus("먼저 '서명란' 도구로 서명 받을 영역을 추가하세요.");
+      return;
+    }
+
+    try {
+      setStatus("서명 요청 업로드 중…");
+      const names = Array.from(new Set(sigFields.map((field) => field.assignee)));
+      const signers = names.map((name) => ({ name, token: window.SignFlow.randomToken(20) }));
+      const fields = sigFields.map((field) => {
+        const signer = signers.find((entry) => entry.name === field.assignee);
+        return {
+          id: field.id,
+          page: field.pageNumber,
+          x: field.x,
+          y: field.y,
+          w: field.width,
+          h: field.height,
+          assignee: field.assignee,
+          signerToken: signer.token
+        };
+      });
+
+      const { envelopeId } = await window.SignFlow.createEnvelope({
+        pdfBytes: state.pdfBytes,
+        pdfName: state.pdfName || "document",
+        pageCount: state.pageMeta.length,
+        signers,
+        fields
+      });
+
+      showLinksModal(envelopeId, signers);
+      setStatus(`서명 요청이 생성됐어요. 담당자 ${signers.length}명에게 링크를 전달하세요.`);
+    } catch (error) {
+      console.error(error);
+      setStatus("업로드 실패: " + (error && error.message ? error.message : "오류"));
+    }
+  }
+
+  function buildPageBase() {
+    return `${location.origin}${location.pathname.replace(/[^/]*$/, "")}`;
+  }
+
+  function showLinksModal(envelopeId, signers) {
+    const modal = document.getElementById("linksModal");
+    const body = document.getElementById("linksBody");
+    const info = document.getElementById("linksEnvelopeInfo");
+    const statusLink = document.getElementById("statusLink");
+    if (!modal || !body) {
+      return;
+    }
+
+    const base = buildPageBase();
+    body.innerHTML = "";
+    if (info) info.textContent = `문서 ID: ${envelopeId}`;
+
+    signers.forEach((signer) => {
+      const link = `${base}sign.html?env=${encodeURIComponent(envelopeId)}&token=${encodeURIComponent(signer.token)}`;
+      const row = document.createElement("div");
+      row.className = "link-row";
+
+      const name = document.createElement("div");
+      name.className = "link-name";
+      name.textContent = signer.name;
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.readOnly = true;
+      input.value = link;
+      input.addEventListener("focus", () => input.select());
+
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "pop-btn primary";
+      copyBtn.textContent = "복사";
+      copyBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(link).then(() => {
+          copyBtn.textContent = "복사됨";
+          window.setTimeout(() => { copyBtn.textContent = "복사"; }, 1500);
+        }).catch(() => {
+          input.focus();
+          setStatus("자동 복사 실패 — 링크를 직접 선택해 복사하세요.");
+        });
+      });
+
+      row.append(name, input, copyBtn);
+      body.appendChild(row);
+    });
+
+    if (statusLink) {
+      statusLink.href = `${base}status.html?env=${encodeURIComponent(envelopeId)}`;
+    }
+
+    modal.classList.remove("hidden");
+  }
+
   async function composePdfBytes() {
     await document.fonts.ready;
     const composablePdfBytes = await getComposablePdfBytes();
@@ -1881,6 +2036,9 @@
     }
 
     for (const annotation of state.annotations) {
+      if (annotation.type === "sigfield") {
+        continue; // 서명 요청 자리표시자는 로컬 다운로드에 포함하지 않음
+      }
       const page = pdfDoc.getPage(annotation.pageNumber - 1);
       const pageWidth = page.getWidth();
       const pageHeight = page.getHeight();

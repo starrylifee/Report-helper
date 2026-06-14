@@ -34,6 +34,7 @@
         <input id="pdfInput" type="file"
           accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           hidden>
+        <button class="chip-btn" id="sendButton" type="button" disabled>서명 요청 보내기</button>
         <button class="chip-btn" id="exportButton" type="button" disabled>다운로드</button>
       </div>
     </header>
@@ -46,6 +47,7 @@
             <button class="tool-chip active" data-tool="select" type="button">선택</button>
             <button class="tool-chip" data-tool="text" type="button">텍스트</button>
             <button class="tool-chip" data-tool="mask" type="button">가림판</button>
+            <button class="tool-chip" data-tool="sigfield" type="button">서명란</button>
             <label class="tool-chip upload-chip">
               사진
               <input id="photoFileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
@@ -155,14 +157,35 @@
     </div>
   </div>
 
+  <!-- 서명 요청 링크 모달 -->
+  <div class="modal-backdrop hidden" id="linksModal" aria-hidden="true" inert>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>서명 요청 링크</h2>
+        <button class="icon-btn" id="closeLinksButton" type="button">✕</button>
+      </div>
+      <p class="modal-hint" id="linksEnvelopeInfo"></p>
+      <div id="linksBody" class="links-body"></div>
+      <p class="modal-hint">각 담당자에게 본인 링크를 복사해 전달하세요. 링크를 아는 사람만 해당 서명란에 서명할 수 있어요.</p>
+      <div class="modal-footer">
+        <a id="statusLink" class="action-btn secondary" href="#" target="_blank" rel="noopener">진행 현황 보기</a>
+      </div>
+    </div>
+  </div>
+
   <!-- Selection panel (hidden, for JS compatibility) -->
   <div id="selectionPanel" class="selection-panel empty" style="display:none;"></div>
   <p id="toolHint" style="display:none;"></p>
 
   <footer class="app-footer">
     <span>© 2026 서울신답초등학교 정용석</span>
-    <span class="footer-privacy">모든 작업은 이 기기에서만 처리되며, 외부 서버에 데이터를 전송하지 않습니다.</span>
+    <span class="footer-privacy">편집은 이 기기에서 처리됩니다. '서명 요청'을 보내면 문서와 서명이 Firebase에 안전하게 저장됩니다.</span>
   </footer>
+
+  <!-- Firebase (compat: 전역 firebase 노출, app.js와 동기 호환) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="./firebase-init.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>

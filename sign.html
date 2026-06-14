@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="description" content="서명 요청 — 내게 배정된 영역에 서명하세요.">
+  <title>서명해주세요</title>
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f172a'/%3E%3Cpath d='M9 22l2.5-1L22 10.5c.5-.5.5-1.3 0-1.8l-.7-.7c-.5-.5-1.3-.5-1.8 0L9 19.5 8 24l4-2z' fill='%236366f1'/%3E%3Cpath d='M8 24l1-4.5L11.5 22z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">✍</div>
+        <span class="brand-name">서명해주세요</span>
+      </div>
+      <div class="topbar-actions">
+        <span id="signProgress" class="status-text">불러오는 중…</span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <div class="workspace-header">
+        <div class="doc-info">
+          <span id="docName" class="doc-name">문서 불러오는 중…</span>
+        </div>
+        <div class="workspace-header-right">
+          <span id="signerName" class="doc-badge" style="display:none;"></span>
+        </div>
+      </div>
+      <div class="pdf-viewport" id="viewer">
+        <div class="empty-state" id="signEmpty">
+          <div class="empty-content">
+            <h2 id="signEmptyTitle">서명 문서를 불러오는 중…</h2>
+            <p id="signEmptyMsg">잠시만 기다려주세요.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 서명 모달 -->
+  <div class="modal-backdrop hidden" id="signatureModal" aria-hidden="true" inert>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>서명</h2>
+        <button class="icon-btn" id="closeSignatureButton" type="button">✕</button>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="signatureCanvas"></canvas>
+      </div>
+      <p class="modal-hint">손가락 또는 마우스로 서명한 뒤 '제출'을 누르세요.</p>
+      <div class="modal-footer">
+        <button class="action-btn secondary" id="clearSignatureButton" type="button">지우기</button>
+        <button class="action-btn" id="useSignatureButton" type="button">제출</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>© 2026 서울신답초등학교 정용석</span>
+    <span class="footer-privacy">링크를 받은 담당자만 본인 서명란에 서명할 수 있습니다.</span>
+  </footer>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="./firebase-init.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="./sign.js"></script>
+</body>
+
+</html>

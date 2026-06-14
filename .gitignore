@@ -1,0 +1,13 @@
+# Firebase CLI 캐시/로그
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS / 에디터
+.DS_Store
+Thumbs.db

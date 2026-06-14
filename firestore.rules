@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// 토큰(추측불가 URL) 기반 접근 모델.
+// - envelopeId 자체가 비밀키 역할: 링크를 아는 사람만 접근.
+// - 서명 영역/ PDF는 생성 후 불변. 서명자는 signatures 서브컬렉션에만 기록.
+// 내부 결재/확인용 수준이며, 강한 본인인증이 필요하면 Firebase Auth로 격상해야 한다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /envelopes/{envelopeId} {
+      // 링크(=id)를 아는 사람은 읽기 가능.
+      allow read: if true;
+      // 관리자가 봉투를 생성(MVP: id가 비밀이므로 공개 생성 허용).
+      allow create: if true;
+      // 생성 후 메타/서명영역은 불변. 클라이언트 수정·삭제 금지.
+      allow update, delete: if false;
+
+      // PDF 원본 청크: 한 번 쓰면 불변.
+      match /pdfChunks/{chunkId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if false;
+      }
+
+      // 서명 결과: 서명자가 채운다. fieldId 문서 1개 = 서명영역 1개.
+      match /signatures/{fieldId} {
+        allow read: if true;
+        // 이미지 데이터와 서명자 토큰이 있어야 기록 가능.
+        allow create, update: if request.resource.data.keys().hasAll(['image', 'signerToken'])
+          && request.resource.data.image is string
+          && request.resource.data.image.size() < 900000;
+        allow delete: if false;
+      }
+    }
+  }
+}
