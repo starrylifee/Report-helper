@@ -12,30 +12,30 @@ service cloud.firestore {
       allow get: if true;
       // 컬렉션 전체 열거(덤프) 차단 — 다른 사람 문서를 훑어볼 수 없음.
       allow list: if false;
-      // 관리자가 봉투를 생성. (TODO: 로그인 도입 후 request.auth != null 로 강화)
-      allow create: if true;
+      // 봉투 생성은 로그인한 관리자만.
+      allow create: if request.auth != null;
       // 생성 후 메타/서명영역은 불변(수정 금지).
       allow update: if false;
-      // 프로젝트 전체 취소·삭제. (TODO: 로그인 도입 후 request.auth != null 로 강화)
-      allow delete: if true;
+      // 프로젝트 전체 취소·삭제도 로그인한 관리자만.
+      allow delete: if request.auth != null;
 
-      // PDF 원본 청크: 한 번 쓰면 불변. 단, 프로젝트 삭제 시 함께 제거 가능.
+      // PDF 원본 청크: 읽기는 공개(서명자), 쓰기·삭제는 관리자만.
       match /pdfChunks/{chunkId} {
         allow read: if true;
-        allow create: if true;
+        allow create: if request.auth != null;
         allow update: if false;
-        allow delete: if true;
+        allow delete: if request.auth != null;
       }
 
-      // 서명 결과: 서명자가 채운다. fieldId 문서 1개 = 서명영역 1개.
+      // 서명 결과: 서명자(비로그인)가 채운다. fieldId 문서 1개 = 서명영역 1개.
       match /signatures/{fieldId} {
         allow read: if true;
-        // 이미지 데이터와 서명자 토큰이 있어야 기록 가능.
+        // 이미지 데이터와 서명자 토큰이 있어야 기록 가능(서명자는 로그인 없음).
         allow create, update: if request.resource.data.keys().hasAll(['image', 'signerToken'])
           && request.resource.data.image is string
           && request.resource.data.image.size() < 900000;
-        // 프로젝트 삭제 시 함께 제거 가능.
-        allow delete: if true;
+        // 서명 삭제(프로젝트 삭제 시)는 관리자만.
+        allow delete: if request.auth != null;
       }
     }
   }

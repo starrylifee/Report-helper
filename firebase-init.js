@@ -26,6 +26,8 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
   const FieldValue = firebase.firestore.FieldValue;
+  // 인증은 auth SDK가 로드된 페이지(관리자 index.html)에서만 사용. 서명자 페이지엔 없음.
+  const auth = firebase.auth ? firebase.auth() : null;
 
   // Firestore 문서 1MiB 한도를 고려해 청크당 700KB(base64 문자) 정도로 자른다.
   const CHUNK_SIZE = 700000;
@@ -170,6 +172,28 @@
     watchSignatures,
     randomToken,
     bytesToBase64,
-    base64ToBytes
+    base64ToBytes,
+    // ---- 인증 (관리자 페이지 전용) ----
+    auth: !!auth,
+    onAuth: function (callback) {
+      if (auth) {
+        return auth.onAuthStateChanged(callback);
+      }
+      callback(null);
+      return function () {};
+    },
+    signInWithGoogle: function () {
+      if (!auth) {
+        return Promise.reject(new Error("auth unavailable"));
+      }
+      const provider = new firebase.auth.GoogleAuthProvider();
+      return auth.signInWithPopup(provider);
+    },
+    signOut: function () {
+      return auth ? auth.signOut() : Promise.resolve();
+    },
+    getUser: function () {
+      return auth ? auth.currentUser : null;
+    }
   };
 })();

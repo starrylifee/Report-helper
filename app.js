@@ -104,6 +104,7 @@
   bootstrap();
 
   function bootstrap() {
+    setupAuthGate();
     els.openPdfButton.addEventListener("click", () => els.pdfInput.click());
     if (els.openPdfButtonAlt) {
       els.openPdfButtonAlt.addEventListener("click", () => els.pdfInput.click());
@@ -2768,6 +2769,51 @@
     if (els.annotationPopover) {
       els.annotationPopover.classList.add("hidden");
     }
+  }
+
+  // ===== 관리자 로그인 게이트 =====
+  function setupAuthGate() {
+    const gate = document.getElementById("loginGate");
+    const loginBtn = document.getElementById("googleLoginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const userEmail = document.getElementById("userEmail");
+    const loginError = document.getElementById("loginError");
+
+    if (!window.SignFlow || !window.SignFlow.auth) {
+      // 인증을 못 쓰는 환경이면 게이트를 숨겨 앱을 막지 않는다.
+      if (gate) gate.classList.add("hidden");
+      return;
+    }
+
+    if (loginBtn) {
+      loginBtn.addEventListener("click", () => {
+        if (loginError) loginError.textContent = "";
+        window.SignFlow.signInWithGoogle().catch((error) => {
+          console.error(error);
+          if (loginError) {
+            loginError.textContent = "로그인 실패: " + (error && error.message ? error.message : "오류");
+          }
+        });
+      });
+    }
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => window.SignFlow.signOut());
+    }
+
+    window.SignFlow.onAuth((user) => {
+      if (user) {
+        if (gate) gate.classList.add("hidden");
+        if (userEmail) {
+          userEmail.textContent = user.email || "로그인됨";
+          userEmail.style.display = "";
+        }
+        if (logoutBtn) logoutBtn.style.display = "";
+      } else {
+        if (gate) gate.classList.remove("hidden");
+        if (userEmail) userEmail.style.display = "none";
+        if (logoutBtn) logoutBtn.style.display = "none";
+      }
+    });
   }
 
   // ===== 담당자 로스터 =====

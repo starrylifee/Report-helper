@@ -1635,6 +1635,66 @@ textarea {
   background: rgba(220, 38, 38, 0.15);
 }
 
+/* ===== 관리자 로그인 게이트 ===== */
+.login-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+}
+
+.login-gate.hidden {
+  display: none;
+}
+
+.login-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 36px 32px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.login-card .brand-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.login-card h1 {
+  font-size: 20px;
+  margin: 8px 0 6px;
+  color: #18181b;
+}
+
+.login-card p {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0 0 22px;
+  line-height: 1.5;
+}
+
+.login-error {
+  color: #dc2626 !important;
+  font-size: 13px;
+  margin: 14px 0 0 !important;
+  min-height: 18px;
+}
+
+.user-chip {
+  font-size: 12px;
+  color: #6b7280;
+  padding: 0 6px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ===== 인앱 서명 관리 화면 ===== */
 .manage-overlay {
   position: fixed;
