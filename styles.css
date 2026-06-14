@@ -1546,15 +1546,22 @@ textarea {
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
-  border: 1px solid #d4d4d8;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   font-size: 13px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+}
+
+.signer-add input::placeholder {
+  color: #64748b;
 }
 
 .signer-add input:focus {
   outline: none;
   border-color: #6366f1;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
 }
 
 .signer-add .action-btn {
