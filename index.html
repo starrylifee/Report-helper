@@ -63,6 +63,18 @@
             <input id="signatureFileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
           </label>
         </section>
+
+        <section class="sidebar-section">
+          <h3 class="sidebar-title">담당자</h3>
+          <div id="signerRoster" class="signer-roster"></div>
+          <button class="action-btn secondary" id="addSignerButton" type="button">+ 담당자 추가</button>
+          <p class="sidebar-note">담당자를 고르고 <strong>서명란</strong> 도구로 위치를 클릭하면 그 사람 칸이 만들어져요.</p>
+        </section>
+
+        <section class="sidebar-section" id="sentRequestsSection" style="display:none;">
+          <h3 class="sidebar-title">보낸 요청</h3>
+          <div id="sentRequests" class="sent-requests"></div>
+        </section>
       </aside>
 
       <!-- Hidden preset elements for JS compat -->

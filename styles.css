@@ -1453,3 +1453,98 @@ textarea {
 .status-when {
   color: #71717a;
 }
+
+/* ===== 담당자 로스터 ===== */
+.signer-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.roster-empty {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 2px 0 6px;
+}
+
+.signer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.signer-row.active {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.signer-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.signer-name {
+  flex: 1;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #27272a;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signer-del {
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.signer-del:hover {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.sidebar-note {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.sent-requests {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sent-row {
+  text-align: left;
+  background: #f5f5f7;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3f3f46;
+  cursor: pointer;
+}
+
+.sent-row:hover {
+  background: #ececf0;
+}
