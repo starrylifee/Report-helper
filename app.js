@@ -53,6 +53,7 @@
     exportButton: document.getElementById("exportButton"),
     sendButton: document.getElementById("sendButton"),
     signerRoster: document.getElementById("signerRoster"),
+    signerNameInput: document.getElementById("signerNameInput"),
     sentRequests: document.getElementById("sentRequests"),
     sentRequestsSection: document.getElementById("sentRequestsSection"),
     pdfViewport: document.getElementById("pdfViewport"),
@@ -122,7 +123,15 @@
       });
     }
     const addSignerButton = document.getElementById("addSignerButton");
-    if (addSignerButton) addSignerButton.addEventListener("click", addSignerViaPrompt);
+    if (addSignerButton) addSignerButton.addEventListener("click", addSignerFromInput);
+    if (els.signerNameInput) {
+      els.signerNameInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          addSignerFromInput();
+        }
+      });
+    }
     els.openSignatureButton.addEventListener("click", openSignatureModal);
     els.closeSignatureButton.addEventListener("click", closeSignatureModal);
     els.clearSignatureButton.addEventListener("click", clearSignaturePad);
@@ -771,13 +780,11 @@
     }
 
     if (state.activeTool === "sigfield") {
-      let signer = getSignerById(state.activeSignerId);
+      const signer = getSignerById(state.activeSignerId);
       if (!signer) {
-        signer = addSignerViaPrompt();
-        if (!signer) {
-          setStatus("담당자를 먼저 추가하세요.");
-          return;
-        }
+        setStatus("왼쪽 '담당자'에서 이름을 추가하고 선택한 뒤 클릭하세요.");
+        if (els.signerNameInput) els.signerNameInput.focus();
+        return;
       }
       addAnnotation(createSigFieldAnnotation(pageNumber, x, y, signer.id));
       renderSignerRoster();
@@ -2764,15 +2771,35 @@
     return state.signers.find((signer) => signer.id === signerId) || null;
   }
 
-  function addSignerViaPrompt() {
-    const name = window.prompt("담당자 이름을 입력하세요 (예: 홍길동, 교감선생님)", "");
-    if (!name || !name.trim()) {
+  function addSigner(name) {
+    const clean = (name || "").trim();
+    if (!clean) {
       return null;
     }
-    const signer = { id: createId(), name: name.trim(), color: nextSignerColor() };
+    const signer = { id: createId(), name: clean, color: nextSignerColor() };
     state.signers.push(signer);
     state.activeSignerId = signer.id;
     renderSignerRoster();
+    return signer;
+  }
+
+  function addSignerFromInput() {
+    const input = els.signerNameInput;
+    if (!input) {
+      return null;
+    }
+    const signer = addSigner(input.value);
+    if (!signer) {
+      input.focus();
+      setStatus("담당자 이름을 입력하세요.");
+      return null;
+    }
+    input.value = "";
+    input.focus();
+    if (state.activeTool !== "sigfield") {
+      setActiveTool("sigfield", false);
+    }
+    setStatus(`'${signer.name}' 추가됨 — 문서를 클릭해 서명란을 배치하세요.`);
     return signer;
   }
 

@@ -6,17 +6,19 @@
  * 노출 API: window.SignFlow
  */
 (function () {
-  const firebaseConfig = {
-    apiKey: "AIzaSyCAKsrlBOeThNDiarW8KZ7YojFpt7jfzcI",
-    authDomain: "reportmaker-2334c.firebaseapp.com",
-    projectId: "reportmaker-2334c",
-    storageBucket: "reportmaker-2334c.firebasestorage.app",
-    messagingSenderId: "476148088631",
-    appId: "1:476148088631:web:a7bcf7f310f5a11a5be4b2"
-  };
+  // 설정은 firebase-config.js(window.FIREBASE_CONFIG)에서 주입된다.
+  // 로컬/Firebase Hosting: 저장소에 커밋된 firebase-config.js 사용.
+  // Vercel: 빌드 시 generate-config.js가 환경변수로 firebase-config.js를 덮어씀.
+  const firebaseConfig = window.FIREBASE_CONFIG;
 
   if (!window.firebase || !window.firebase.firestore) {
     console.error("[SignFlow] Firebase compat SDK가 로드되지 않았습니다. index.html 스크립트 순서를 확인하세요.");
+    window.SignFlow = { available: false };
+    return;
+  }
+
+  if (!firebaseConfig || !firebaseConfig.apiKey) {
+    console.error("[SignFlow] FIREBASE_CONFIG가 없습니다. firebase-config.js 로드 여부/환경변수를 확인하세요.");
     window.SignFlow = { available: false };
     return;
   }

@@ -67,8 +67,11 @@
         <section class="sidebar-section">
           <h3 class="sidebar-title">담당자</h3>
           <div id="signerRoster" class="signer-roster"></div>
-          <button class="action-btn secondary" id="addSignerButton" type="button">+ 담당자 추가</button>
-          <p class="sidebar-note">담당자를 고르고 <strong>서명란</strong> 도구로 위치를 클릭하면 그 사람 칸이 만들어져요.</p>
+          <div class="signer-add">
+            <input id="signerNameInput" type="text" placeholder="담당자 이름 (예: 홍길동)" maxlength="40" autocomplete="off">
+            <button class="action-btn secondary" id="addSignerButton" type="button">추가</button>
+          </div>
+          <p class="sidebar-note">한 명씩 추가하세요. 담당자를 고른 뒤 <strong>서명란</strong> 도구로 위치를 클릭하면 그 사람 칸이 만들어져요.</p>
         </section>
 
         <section class="sidebar-section" id="sentRequestsSection" style="display:none;">
@@ -185,6 +188,23 @@
     </div>
   </div>
 
+  <!-- 인앱 서명 관리 화면 (현황 + 서명 크기 조절 + 다운로드) -->
+  <div class="manage-overlay hidden" id="manageOverlay" aria-hidden="true">
+    <header class="manage-bar">
+      <div class="manage-titlewrap">
+        <strong id="manageDocName" class="manage-title">문서</strong>
+        <span id="manageProgress" class="manage-progress"></span>
+      </div>
+      <div class="manage-actions">
+        <span id="manageHint" class="manage-hint">서명을 드래그해 위치·크기를 조절하세요.</span>
+        <button class="chip-btn" id="manageLinksBtn" type="button">링크 보기</button>
+        <button class="chip-btn primary" id="manageDownloadBtn" type="button" disabled>최종 PDF 다운로드</button>
+        <button class="chip-btn" id="manageCloseBtn" type="button">닫기</button>
+      </div>
+    </header>
+    <div class="manage-viewer" id="manageViewer"></div>
+  </div>
+
   <!-- Selection panel (hidden, for JS compatibility) -->
   <div id="selectionPanel" class="selection-panel empty" style="display:none;"></div>
   <p id="toolHint" style="display:none;"></p>
@@ -197,6 +217,7 @@
   <!-- Firebase (compat: 전역 firebase 노출, app.js와 동기 호환) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="./firebase-config.js"></script>
   <script src="./firebase-init.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
