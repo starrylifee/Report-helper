@@ -90,7 +90,7 @@
 
   const signaturePad = {
     canvas: els.signatureCanvas,
-    ctx: els.signatureCanvas.getContext("2d"),
+    ctx: els.signatureCanvas.getContext("2d", { willReadFrequently: true }),
     drawing: false,
     previousPoint: null
   };
@@ -2407,7 +2407,7 @@
     const canvas = document.createElement("canvas");
     canvas.width = image.naturalWidth;
     canvas.height = image.naturalHeight;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(image, 0, 0);
     if (options.removeBackground) {

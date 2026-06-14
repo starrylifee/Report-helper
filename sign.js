@@ -39,7 +39,7 @@
   };
 
   const pad = {
-    ctx: els.canvas.getContext("2d"),
+    ctx: els.canvas.getContext("2d", { willReadFrequently: true }),
     drawing: false,
     hasInk: false,
     prev: null
