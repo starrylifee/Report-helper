@@ -39,7 +39,8 @@
     mode: "pdf",  // "pdf" or "docx"
     docxHtml: null,
     signers: [],          // [{id, name, color}] — 서명 담당자 로스터
-    activeSignerId: null  // 새 서명란을 배정할 현재 담당자
+    activeSignerId: null, // 새 서명란을 배정할 현재 담당자
+    lastSigFieldSize: { width: 0.26, height: 0.08 } // 최근 조절한 서명칸 크기 = 새 칸 기본값
   };
 
   const els = {
@@ -241,6 +242,7 @@
     state.pendingPlacement = null;
     state.signers = [];
     state.activeSignerId = null;
+    state.lastSigFieldSize = { width: 0.26, height: 0.08 };
     renderSignerRoster();
     setActiveTool("select", false);
     state.sourceDocument = {
@@ -1097,8 +1099,8 @@
   }
 
   function createSigFieldAnnotation(pageNumber, x, y, signerId) {
-    const width = 0.26;
-    const height = 0.08;
+    const width = clamp(state.lastSigFieldSize.width, 0.05, 0.9);
+    const height = clamp(state.lastSigFieldSize.height, 0.02, 0.5);
     return {
       id: createId(),
       type: "sigfield",
@@ -1298,6 +1300,10 @@
       } else if (annotation.type === "text") {
         annotation.width = clamp(start.annotationWidth + dx, minWidth, 1 - annotation.x);
         updateTextLayout(annotation);
+      } else if (annotation.type === "sigfield") {
+        // 서명칸은 가로·세로 자유 조절
+        annotation.width = clamp(start.annotationWidth + dx, minWidth, 1 - annotation.x);
+        annotation.height = clamp(start.annotationHeight + dy, minHeight, 1 - annotation.y);
       } else {
         annotation.width = clamp(start.annotationWidth + dx, minWidth, 1 - annotation.x);
         const widthOnPdf = annotation.width * pageView.pdfWidth;
@@ -1311,7 +1317,10 @@
     const onPointerUp = () => {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
-      // silent – no status update for drag/resize
+      // 서명칸을 조절하면 그 크기를 이후 새 서명칸의 기본값으로 기억
+      if (annotation.type === "sigfield") {
+        state.lastSigFieldSize = { width: annotation.width, height: annotation.height };
+      }
     };
 
     window.addEventListener("pointermove", onPointerMove);
