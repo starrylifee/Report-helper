@@ -1549,7 +1549,15 @@ textarea {
   gap: 6px;
 }
 
+.sent-row-wrap {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
 .sent-row {
+  flex: 1;
+  min-width: 0;
   text-align: left;
   background: #f5f5f7;
   border: 1px solid #e4e4e7;
@@ -1559,8 +1567,27 @@ textarea {
   font-weight: 500;
   color: #3f3f46;
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sent-row:hover {
   background: #ececf0;
+}
+
+.sent-del {
+  flex: 0 0 auto;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.sent-del:hover {
+  background: rgba(220, 38, 38, 0.15);
 }

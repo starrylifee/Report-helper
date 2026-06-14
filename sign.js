@@ -169,12 +169,17 @@
         img.src = signed.image;
         img.alt = "서명";
         box.appendChild(img);
-        box.title = "서명 완료 — 다시 누르면 재서명";
+        box.title = "서명 완료 — 누르면 다시 서명할 수 있어요";
+        box.addEventListener("click", () => {
+          if (window.confirm("이미 서명한 칸이에요. 다시 서명하시겠습니까?")) {
+            openModal(field.id);
+          }
+        });
       } else {
         box.textContent = "여기를 눌러 서명";
+        box.addEventListener("click", () => openModal(field.id));
       }
 
-      box.addEventListener("click", () => openModal(field.id));
       view.overlay.appendChild(box);
     });
   }

@@ -120,6 +120,30 @@
     });
   }
 
+  // ---- 봉투(서명 프로젝트) 완전 삭제 ----
+  async function deleteEnvelope(envelopeId) {
+    const envRef = db.collection("envelopes").doc(envelopeId);
+    // 서브컬렉션(PDF 청크, 서명) 먼저 삭제
+    for (const sub of ["pdfChunks", "signatures"]) {
+      const snap = await envRef.collection(sub).get();
+      let batch = db.batch();
+      let count = 0;
+      for (const doc of snap.docs) {
+        batch.delete(doc.ref);
+        count += 1;
+        if (count === 450) {
+          await batch.commit();
+          batch = db.batch();
+          count = 0;
+        }
+      }
+      if (count > 0) {
+        await batch.commit();
+      }
+    }
+    await envRef.delete();
+  }
+
   // ---- 서명 현황 실시간 구독 ----
   function watchSignatures(envelopeId, callback) {
     return db
@@ -140,6 +164,7 @@
     createEnvelope,
     getEnvelope,
     submitSignature,
+    deleteEnvelope,
     watchSignatures,
     randomToken,
     bytesToBase64,

@@ -2889,15 +2889,56 @@
     section.style.display = "";
     host.innerHTML = "";
     list.forEach((record) => {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = "sent-row";
+      const wrap = document.createElement("div");
+      wrap.className = "sent-row-wrap";
+
+      const open = document.createElement("button");
+      open.type = "button";
+      open.className = "sent-row";
       const when = record.createdAt ? new Date(record.createdAt) : null;
-      row.textContent = `${record.pdfName || "문서"} · ${record.signers.length}명`;
-      row.title = when ? `${when.toLocaleString()} — 클릭하면 링크를 다시 봅니다` : "";
-      row.addEventListener("click", () => showLinksModal(record.envelopeId, record.signers));
-      host.appendChild(row);
+      open.textContent = `${record.pdfName || "문서"} · ${record.signers.length}명`;
+      open.title = when ? `${when.toLocaleString()} — 클릭하면 링크를 다시 봅니다` : "";
+      open.addEventListener("click", () => showLinksModal(record.envelopeId, record.signers));
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "sent-del";
+      del.textContent = "삭제";
+      del.title = "이 서명 프로젝트를 완전히 삭제 (링크 무효화)";
+      del.addEventListener("click", () => deleteSentRequest(record));
+
+      wrap.append(open, del);
+      host.appendChild(wrap);
     });
+  }
+
+  async function deleteSentRequest(record) {
+    const ok = window.confirm(
+      `'${record.pdfName || "문서"}' 서명 프로젝트를 삭제할까요?\n링크가 무효화되고, 수집된 서명도 함께 삭제됩니다. 되돌릴 수 없어요.`);
+    if (!ok) {
+      return;
+    }
+    try {
+      setStatus("서명 프로젝트 삭제 중…");
+      if (window.SignFlow && window.SignFlow.available) {
+        await window.SignFlow.deleteEnvelope(record.envelopeId);
+      }
+      removeSentRequest(record.envelopeId);
+      setStatus("서명 프로젝트를 삭제했어요. 링크는 더 이상 열리지 않아요.");
+    } catch (error) {
+      console.error(error);
+      setStatus("삭제 실패: " + (error && error.message ? error.message : "오류"));
+    }
+  }
+
+  function removeSentRequest(envelopeId) {
+    const list = loadSentRequests().filter((record) => record.envelopeId !== envelopeId);
+    try {
+      localStorage.setItem(SENT_STORAGE_KEY, JSON.stringify(list));
+    } catch (error) {
+      console.error(error);
+    }
+    renderSentRequests();
   }
 
   function hexToRgba(hex, alpha) {

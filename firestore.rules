@@ -12,14 +12,17 @@ service cloud.firestore {
       allow read: if true;
       // 관리자가 봉투를 생성(MVP: id가 비밀이므로 공개 생성 허용).
       allow create: if true;
-      // 생성 후 메타/서명영역은 불변. 클라이언트 수정·삭제 금지.
-      allow update, delete: if false;
+      // 생성 후 메타/서명영역은 불변(수정 금지).
+      allow update: if false;
+      // 관리자가 프로젝트 전체를 취소·삭제할 수 있다(링크 보유자 기준).
+      allow delete: if true;
 
-      // PDF 원본 청크: 한 번 쓰면 불변.
+      // PDF 원본 청크: 한 번 쓰면 불변. 단, 프로젝트 삭제 시 함께 제거 가능.
       match /pdfChunks/{chunkId} {
         allow read: if true;
         allow create: if true;
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if true;
       }
 
       // 서명 결과: 서명자가 채운다. fieldId 문서 1개 = 서명영역 1개.
@@ -29,7 +32,8 @@ service cloud.firestore {
         allow create, update: if request.resource.data.keys().hasAll(['image', 'signerToken'])
           && request.resource.data.image is string
           && request.resource.data.image.size() < 900000;
-        allow delete: if false;
+        // 프로젝트 삭제 시 함께 제거 가능.
+        allow delete: if true;
       }
     }
   }
