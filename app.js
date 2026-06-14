@@ -112,9 +112,13 @@
     if (els.sendButton) els.sendButton.addEventListener("click", sendForSignatures);
     const closeLinksButton = document.getElementById("closeLinksButton");
     if (closeLinksButton) {
-      closeLinksButton.addEventListener("click", () => {
-        const modal = document.getElementById("linksModal");
-        if (modal) modal.classList.add("hidden");
+      closeLinksButton.addEventListener("click", closeLinksModal);
+    }
+    const linksModal = document.getElementById("linksModal");
+    if (linksModal) {
+      // 카드 바깥(어두운 배경) 클릭 시 닫기
+      linksModal.addEventListener("click", (event) => {
+        if (event.target === linksModal) closeLinksModal();
       });
     }
     const addSignerButton = document.getElementById("addSignerButton");
@@ -1962,6 +1966,7 @@
         createdAt: Date.now(),
         signers
       });
+      setActiveTool("select", false); // 발송 후엔 더 이상 서명란이 추가되지 않도록
       showLinksModal(envelopeId, signers);
       setStatus(`서명 요청이 생성됐어요. 담당자 ${signers.length}명에게 링크를 전달하세요.`);
     } catch (error) {
@@ -2025,6 +2030,18 @@
     }
 
     modal.classList.remove("hidden");
+    modal.removeAttribute("inert");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeLinksModal() {
+    const modal = document.getElementById("linksModal");
+    if (!modal) {
+      return;
+    }
+    modal.classList.add("hidden");
+    modal.setAttribute("inert", "");
+    modal.setAttribute("aria-hidden", "true");
   }
 
   async function composePdfBytes() {
@@ -2762,9 +2779,13 @@
   function setActiveSigner(signerId) {
     state.activeSignerId = signerId;
     if (state.activeTool !== "sigfield") {
-      setActiveTool("sigfield");
+      setActiveTool("sigfield", false);
     }
     renderSignerRoster();
+    const signer = getSignerById(signerId);
+    if (signer) {
+      setStatus(`'${signer.name}' 선택됨 — 문서를 클릭해 서명란을 배치하세요.`);
+    }
   }
 
   function deleteSigner(signerId) {
@@ -2822,7 +2843,14 @@
       delBtn.title = "담당자 삭제";
       delBtn.addEventListener("click", () => deleteSigner(signer.id));
 
-      row.append(dot, nameBtn, delBtn);
+      row.append(dot, nameBtn);
+      if (signer.id === state.activeSignerId) {
+        const badge = document.createElement("span");
+        badge.className = "signer-active-badge";
+        badge.textContent = "선택됨";
+        row.appendChild(badge);
+      }
+      row.appendChild(delBtn);
       host.appendChild(row);
     });
   }
