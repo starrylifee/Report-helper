@@ -953,6 +953,28 @@ textarea {
   color: var(--ink);
 }
 
+.guide-notice {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-xs);
+  border: 1px solid #f1c40f55;
+  background: #fff8e1;
+  color: #7a5b00;
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+.guide-notice strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #8a4b00;
+}
+
+.guide-notice em {
+  font-style: normal;
+  font-weight: 700;
+}
+
 .guide-footer {
   flex-wrap: wrap;
 }
