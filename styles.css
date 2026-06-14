@@ -1603,6 +1603,22 @@ textarea {
   background: #ececf0;
 }
 
+.sent-link {
+  flex: 0 0 auto;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  color: #4f46e5;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.sent-link:hover {
+  background: #e0e7ff;
+}
+
 .sent-del {
   flex: 0 0 auto;
   background: rgba(220, 38, 38, 0.08);
@@ -1617,4 +1633,123 @@ textarea {
 
 .sent-del:hover {
   background: rgba(220, 38, 38, 0.15);
+}
+
+/* ===== 인앱 서명 관리 화면 ===== */
+.manage-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: #f4f4f5;
+  display: flex;
+  flex-direction: column;
+}
+
+.manage-overlay.hidden {
+  display: none;
+}
+
+.manage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.manage-titlewrap {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.manage-title {
+  font-size: 15px;
+  color: #18181b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manage-progress {
+  font-size: 12px;
+  color: #4f46e5;
+  font-weight: 600;
+  margin-left: 10px;
+  flex: 0 0 auto;
+}
+
+.manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.manage-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-right: 4px;
+}
+
+.manage-viewer {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.manage-loading {
+  color: #71717a;
+  font-size: 14px;
+  margin-top: 40px;
+}
+
+.manage-page {
+  position: relative;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+.manage-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.manage-sig {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.manage-sig.signed {
+  border: 1.5px solid rgba(99, 102, 241, 0.55);
+  border-radius: 4px;
+  cursor: move;
+  touch-action: none;
+}
+
+.manage-sig.signed img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+.manage-sig.pending {
+  border: 2px dashed #cbd5e1;
+  background: rgba(148, 163, 184, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #94a3b8;
+  border-radius: 4px;
 }

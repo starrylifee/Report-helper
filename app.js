@@ -122,6 +122,7 @@
         if (event.target === linksModal) closeLinksModal();
       });
     }
+    window.showEnvelopeLinks = showLinksModal; // 인앱 관리 화면(manage.js)에서 링크 모달 재사용
     const addSignerButton = document.getElementById("addSignerButton");
     if (addSignerButton) addSignerButton.addEventListener("click", addSignerFromInput);
     if (els.signerNameInput) {
@@ -2033,7 +2034,14 @@
     });
 
     if (statusLink) {
-      statusLink.href = `${base}status.html?env=${encodeURIComponent(envelopeId)}`;
+      statusLink.href = "#";
+      statusLink.onclick = (event) => {
+        event.preventDefault();
+        closeLinksModal();
+        if (typeof window.openManage === "function") {
+          window.openManage(envelopeId);
+        }
+      };
     }
 
     modal.classList.remove("hidden");
@@ -2924,8 +2932,21 @@
       open.className = "sent-row";
       const when = record.createdAt ? new Date(record.createdAt) : null;
       open.textContent = `${record.pdfName || "문서"} · ${record.signers.length}명`;
-      open.title = when ? `${when.toLocaleString()} — 클릭하면 링크를 다시 봅니다` : "";
-      open.addEventListener("click", () => showLinksModal(record.envelopeId, record.signers));
+      open.title = when ? `${when.toLocaleString()} — 클릭하면 현황·서명 관리 화면이 열립니다` : "";
+      open.addEventListener("click", () => {
+        if (typeof window.openManage === "function") {
+          window.openManage(record.envelopeId);
+        } else {
+          showLinksModal(record.envelopeId, record.signers);
+        }
+      });
+
+      const linkBtn = document.createElement("button");
+      linkBtn.type = "button";
+      linkBtn.className = "sent-link";
+      linkBtn.textContent = "링크";
+      linkBtn.title = "서명 요청 링크 다시 보기";
+      linkBtn.addEventListener("click", () => showLinksModal(record.envelopeId, record.signers));
 
       const del = document.createElement("button");
       del.type = "button";
@@ -2934,7 +2955,7 @@
       del.title = "이 서명 프로젝트를 완전히 삭제 (링크 무효화)";
       del.addEventListener("click", () => deleteSentRequest(record));
 
-      wrap.append(open, del);
+      wrap.append(open, linkBtn, del);
       host.appendChild(wrap);
     });
   }
