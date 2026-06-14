@@ -31,7 +31,8 @@
     signatures: {},
     overrides: {},
     pageViews: new Map(),
-    unsub: null
+    unsub: null,
+    dragging: false
   };
 
   if (els.closeBtn) els.closeBtn.addEventListener("click", close);
@@ -150,6 +151,9 @@
   }
 
   function repaint() {
+    if (state.dragging) {
+      return; // 드래그 중에는 실시간 갱신으로 박스를 다시 그리지 않음(드래그 끊김 방지)
+    }
     state.pageViews.forEach((view) => { view.layer.innerHTML = ""; });
     const fields = (state.meta && state.meta.fields) || [];
 
@@ -192,6 +196,7 @@
     const startY = event.clientY;
     const startRect = currentRect(field);
     box.setPointerCapture(event.pointerId);
+    state.dragging = true;
 
     const onMove = (moveEvent) => {
       const ndx = (moveEvent.clientX - startX) / view.displayWidth;
@@ -213,7 +218,9 @@
     const onUp = () => {
       box.removeEventListener("pointermove", onMove);
       box.removeEventListener("pointerup", onUp);
+      state.dragging = false;
       saveOverrides(state.envelopeId, state.overrides);
+      repaint(); // 드래그 중 밀린 실시간 갱신 반영
     };
 
     box.addEventListener("pointermove", onMove);
@@ -237,31 +244,46 @@
       const pdfDoc = await PDFDocument.load(state.pdfBytes.slice());
       const fields = (state.meta && state.meta.fields) || [];
 
+      let skipped = 0;
       for (const field of fields) {
         const sig = state.signatures[field.id];
         if (!sig || !sig.image) {
           continue;
         }
-        const page = pdfDoc.getPage(field.page - 1);
-        const pw = page.getWidth();
-        const ph = page.getHeight();
-        const rect = currentRect(field);
-        const boxX = rect.x * pw;
-        const boxY = ph - (rect.y + rect.h) * ph;
-        const boxW = rect.w * pw;
-        const boxH = rect.h * ph;
+        const pageIndex = field.page - 1;
+        if (pageIndex < 0 || pageIndex >= pdfDoc.getPageCount()) {
+          skipped += 1;
+          continue;
+        }
+        try {
+          const page = pdfDoc.getPage(pageIndex);
+          const pw = page.getWidth();
+          const ph = page.getHeight();
+          const rect = currentRect(field);
+          const boxX = rect.x * pw;
+          const boxY = ph - (rect.y + rect.h) * ph;
+          const boxW = rect.w * pw;
+          const boxH = rect.h * ph;
 
-        const bytes = dataUrlToBytes(sig.image);
-        const embedded = sig.image.startsWith("data:image/jpeg")
-          ? await pdfDoc.embedJpg(bytes)
-          : await pdfDoc.embedPng(bytes);
+          const bytes = dataUrlToBytes(sig.image);
+          const embedded = sig.image.startsWith("data:image/jpeg")
+            ? await pdfDoc.embedJpg(bytes)
+            : await pdfDoc.embedPng(bytes);
 
-        const scale = Math.min(boxW / embedded.width, boxH / embedded.height);
-        const drawW = embedded.width * scale;
-        const drawH = embedded.height * scale;
-        const drawX = boxX + (boxW - drawW) / 2;
-        const drawY = boxY + (boxH - drawH) / 2;
-        page.drawImage(embedded, { x: drawX, y: drawY, width: drawW, height: drawH });
+          const scale = Math.min(boxW / embedded.width, boxH / embedded.height);
+          const drawW = embedded.width * scale;
+          const drawH = embedded.height * scale;
+          const drawX = boxX + (boxW - drawW) / 2;
+          const drawY = boxY + (boxH - drawH) / 2;
+          page.drawImage(embedded, { x: drawX, y: drawY, width: drawW, height: drawH });
+        } catch (fieldError) {
+          // 깨진 서명 이미지 하나가 전체 다운로드를 막지 않도록 건너뜀
+          console.error("서명 합성 실패(건너뜀):", field.id, fieldError);
+          skipped += 1;
+        }
+      }
+      if (skipped > 0) {
+        els.progress.textContent = `일부 서명(${skipped}개)을 합성하지 못해 건너뛰었어요.`;
       }
 
       const out = await pdfDoc.save();
