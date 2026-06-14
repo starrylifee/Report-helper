@@ -938,6 +938,25 @@ textarea {
   margin-top: 16px;
 }
 
+.guide-steps {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--ink-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.guide-steps strong {
+  color: var(--ink);
+}
+
+.guide-footer {
+  flex-wrap: wrap;
+}
+
 /* ═══════════════════════════
    DOCX Editing Container
    ═══════════════════════════ */

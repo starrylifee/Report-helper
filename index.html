@@ -201,6 +201,27 @@
     </div>
   </div>
 
+  <!-- 사용법 안내 모달 (로그인 직후 1회) -->
+  <div class="modal-backdrop hidden" id="guideModal" aria-hidden="true" inert>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>👋 간단 사용법</h2>
+        <button class="icon-btn" id="closeGuideButton" type="button">✕</button>
+      </div>
+      <ol class="guide-steps">
+        <li><strong>파일 열기</strong> — PDF·DOCX 회의록을 불러옵니다.</li>
+        <li><strong>서명란 배치</strong> — 담당자를 추가하고 문서에 서명란을 그립니다.</li>
+        <li><strong>서명 요청 보내기</strong> — 담당자별 링크를 복사해 전달합니다.</li>
+        <li><strong>현황 확인 · 다운로드</strong> — 서명이 모이면 최종 PDF를 받습니다.</li>
+      </ol>
+      <div class="modal-footer guide-footer">
+        <button class="action-btn secondary" id="guideHideToday" type="button">오늘 하루 보지 않기</button>
+        <button class="action-btn secondary" id="guideHide7Days" type="button">7일 보지 않기</button>
+        <button class="action-btn" id="guideGotIt" type="button">시작하기</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 인앱 서명 관리 화면 (현황 + 서명 크기 조절 + 다운로드) -->
   <div class="manage-overlay hidden" id="manageOverlay" aria-hidden="true">
     <header class="manage-bar">

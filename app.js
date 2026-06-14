@@ -105,6 +105,7 @@
   bootstrap();
 
   function bootstrap() {
+    setupGuideModal();
     setupAuthGate();
     els.openPdfButton.addEventListener("click", () => els.pdfInput.click());
     if (els.openPdfButtonAlt) {
@@ -2817,11 +2818,62 @@
           userEmail.style.display = "";
         }
         if (logoutBtn) logoutBtn.style.display = "";
+        maybeShowGuideModal();
       } else {
         if (gate) gate.classList.remove("hidden");
         if (userEmail) userEmail.style.display = "none";
         if (logoutBtn) logoutBtn.style.display = "none";
       }
+    });
+  }
+
+  // ===== 사용법 안내 모달 (로그인 직후) =====
+  const GUIDE_SNOOZE_KEY = "signflow-guide-snooze-until";
+
+  function maybeShowGuideModal() {
+    const modal = document.getElementById("guideModal");
+    if (!modal) return;
+    const until = Number(localStorage.getItem(GUIDE_SNOOZE_KEY) || 0);
+    if (until && Date.now() < until) return; // 아직 숨김 기간
+    openGuideModal();
+  }
+
+  function openGuideModal() {
+    const modal = document.getElementById("guideModal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    modal.removeAttribute("inert");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeGuideModal(snoozeDays) {
+    const modal = document.getElementById("guideModal");
+    if (!modal) return;
+    if (document.activeElement instanceof HTMLElement && modal.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    if (snoozeDays && snoozeDays > 0) {
+      const until = Date.now() + snoozeDays * 24 * 60 * 60 * 1000;
+      localStorage.setItem(GUIDE_SNOOZE_KEY, String(until));
+    }
+    modal.classList.add("hidden");
+    modal.setAttribute("inert", "");
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  function setupGuideModal() {
+    const modal = document.getElementById("guideModal");
+    if (!modal) return;
+    const close = document.getElementById("closeGuideButton");
+    const gotIt = document.getElementById("guideGotIt");
+    const hideToday = document.getElementById("guideHideToday");
+    const hide7Days = document.getElementById("guideHide7Days");
+    if (close) close.addEventListener("click", () => closeGuideModal(0));
+    if (gotIt) gotIt.addEventListener("click", () => closeGuideModal(0));
+    if (hideToday) hideToday.addEventListener("click", () => closeGuideModal(1));
+    if (hide7Days) hide7Days.addEventListener("click", () => closeGuideModal(7));
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) closeGuideModal(0);
     });
   }
 
