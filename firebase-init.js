@@ -29,8 +29,10 @@
   // 인증은 auth SDK가 로드된 페이지(관리자 index.html)에서만 사용. 서명자 페이지엔 없음.
   const auth = firebase.auth ? firebase.auth() : null;
 
-  // Firestore 문서 1MiB 한도를 고려해 청크당 700KB(base64 문자) 정도로 자른다.
-  const CHUNK_SIZE = 700000;
+  // Firestore 문서 1MiB 한도 내에서 청크당 900KB(base64 문자)로 자른다.
+  // data 필드는 인덱스 면제(firestore.indexes.json) 상태라 인덱스 항목 크기 제한과
+  // 무관하며, 청크를 키울수록 봉투 1건당 읽기/쓰기 연산 수가 줄어 Spark 한도에 유리하다.
+  const CHUNK_SIZE = 900000;
 
   // ---- 인코딩 헬퍼 (스택 오버플로 없이 대용량 처리) ----
   function bytesToBase64(bytes) {
@@ -74,7 +76,14 @@
 
     const envelopeRef = db.collection("envelopes").doc(envelopeId);
 
-    const batch = db.batch();
+    // 요청 1건의 페이로드 한도(약 11MiB)와 배치당 500개 연산 한도에 걸리지 않도록
+    // 청크를 여러 배치로 나눠 커밋한다. 안전 마진을 두고 배치당 ~8MiB로 자른다.
+    const MAX_BATCH_BYTES = 8 * 1024 * 1024;
+    const MAX_BATCH_OPS = 400;
+    let batch = db.batch();
+    let pendingOps = 0;
+    let pendingBytes = 0;
+
     batch.set(envelopeRef, {
       pdfName: params.pdfName || "document.pdf",
       pageCount: params.pageCount || 0,
@@ -83,11 +92,25 @@
       fields: params.fields || [],
       createdAt: FieldValue.serverTimestamp()
     });
-    chunks.forEach((data, index) => {
+    pendingOps += 1;
+
+    for (let index = 0; index < chunks.length; index += 1) {
+      const data = chunks[index];
+      if (pendingOps > 0 && (pendingBytes + data.length > MAX_BATCH_BYTES || pendingOps >= MAX_BATCH_OPS)) {
+        await batch.commit();
+        batch = db.batch();
+        pendingOps = 0;
+        pendingBytes = 0;
+      }
       const chunkRef = envelopeRef.collection("pdfChunks").doc(String(index));
       batch.set(chunkRef, { index, data });
-    });
-    await batch.commit();
+      pendingOps += 1;
+      pendingBytes += data.length;
+    }
+
+    if (pendingOps > 0) {
+      await batch.commit();
+    }
 
     return { envelopeId };
   }

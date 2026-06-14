@@ -1971,8 +1971,11 @@
         };
       });
 
+      setStatus("문서 압축 중…");
+      const uploadBytes = await buildUploadPdfBytes();
+
       const { envelopeId } = await window.SignFlow.createEnvelope({
-        pdfBytes: state.pdfBytes,
+        pdfBytes: uploadBytes,
         pdfName: state.pdfName || "document",
         pageCount: state.pageMeta.length,
         signers,
@@ -2068,6 +2071,58 @@
     modal.classList.add("hidden");
     modal.setAttribute("inert", "");
     modal.setAttribute("aria-hidden", "true");
+  }
+
+  // 업로드용 PDF 바이트를 만든다.
+  // Firestore 요청/문서 한도와 Spark 대역폭을 아끼려고, 각 페이지를 적당한 해상도의
+  // JPEG로 다시 렌더해 PDF를 재생성한다(rasterize). 텍스트 선택성은 사라지지만 용량이
+  // 크게 줄어든다. 단, 압축본이 원본보다 커지는 경우(이미 작은 텍스트 PDF 등)에는
+  // 더 작은 원본을 그대로 쓴다.
+  async function buildUploadPdfBytes() {
+    const original = toUint8Array(state.pdfBytes);
+    try {
+      const compressed = await compressPdfForUpload();
+      if (compressed && compressed.length > 0 && compressed.length < original.length) {
+        return compressed;
+      }
+    } catch (error) {
+      console.warn("[SignFlow] PDF 압축 실패, 원본으로 업로드합니다.", error);
+    }
+    return original;
+  }
+
+  async function compressPdfForUpload(options = {}) {
+    const dpi = options.dpi || 150;
+    const quality = options.quality || 0.82;
+    const scale = dpi / 72; // pdf.js scale 1 == 72DPI(PDF 포인트)
+    const srcDoc = state.pdfDoc;
+    if (!srcDoc) {
+      return null;
+    }
+
+    const outDoc = await PDFDocument.create();
+    for (const meta of state.pageMeta) {
+      const page = await srcDoc.getPage(meta.pageNumber);
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.ceil(viewport.width));
+      canvas.height = Math.max(1, Math.ceil(viewport.height));
+      const ctx = canvas.getContext("2d");
+      // JPEG는 투명도가 없으므로 흰 배경을 깔아 검게 나오는 걸 막는다.
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      const jpegBytes = dataUrlToUint8Array(canvas.toDataURL("image/jpeg", quality));
+      const image = await outDoc.embedJpg(jpegBytes);
+
+      // 페이지 크기는 원본 포인트 치수를 유지해 서명란 좌표(정규화값)가 그대로 맞도록 한다.
+      const outPage = outDoc.addPage([meta.pdfWidth, meta.pdfHeight]);
+      outPage.drawImage(image, { x: 0, y: 0, width: meta.pdfWidth, height: meta.pdfHeight });
+    }
+
+    return outDoc.save();
   }
 
   async function composePdfBytes() {
